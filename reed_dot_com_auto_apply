@@ -344,6 +344,7 @@ def click_easy_apply_buttons_for_jobs():
                     third_button.click()
                     time.sleep(5)
                     third_button.click()
+                    time.sleep(5)
                     third_button.click()
                     time.sleep(5)
                     third_button.click()
