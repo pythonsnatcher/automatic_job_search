@@ -375,7 +375,7 @@ def click_easy_apply_buttons_for_jobs():
                 time.sleep(3)  # Optional: Wait for any jobs to load after scrolling to top
 
             # If it's not the last page, try to navigate to the next page using aria-label
-            if page_number < 10:
+            if page_number < number_of_pages_to_search:
                 next_page_clicked = False
 
                 # Dynamically generate the aria-label for the next page
@@ -390,7 +390,7 @@ def click_easy_apply_buttons_for_jobs():
                     # Scroll the element into view to ensure it's visible
                     actions = ActionChains(driver)
                     actions.move_to_element(next_page_button).perform()
-
+                    time.sleep(5)
                     # Click the "Next" button
                     next_page_button.click()
                     print(f"Navigated to Page {page_number + 1}.")
@@ -404,7 +404,7 @@ def click_easy_apply_buttons_for_jobs():
                     print(f"Failed to navigate to the next page after Page {page_number}. Exiting.")
                     break
 
-                time.sleep(5)  # Wait for the next page to load
+                time.sleep(15)  # Wait for the next page to load
 
         print(f"Total applied jobs: {len(applied_jobs)}")
         return applied_jobs  # Return list of all applied jobs
