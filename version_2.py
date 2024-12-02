@@ -16,11 +16,13 @@ import subprocess
 import time
 import threading
 
+
 # Function to run caffeinate in the background
 def keep_screen_active():
     subprocess.Popen(["caffeinate"])  # Prevent system from going into sleep mode
     while True:
         time.sleep(60)  # Keep running the caffeinate process
+
 
 # Run the function in a separate thread
 thread = threading.Thread(target=keep_screen_active)
@@ -28,7 +30,6 @@ thread.daemon = True
 thread.start()
 
 # Your existing script continues here...
-
 
 
 # Function to move the mouse slightly every 60 seconds
@@ -42,12 +43,16 @@ password = os.getenv("password")
 keywords = os.getenv("keywords")
 location = os.getenv("location")
 
-number_of_pages_to_search = 100
+number_of_pages_to_search = 1000
 number_of_cycles_per_page = 1
-
+retry_limit = 5  # Set the retry limit for the first button
 
 # Prompt the user for the remote work option
-remote_work_preference = (input("Would you like to filter for remote work jobs? (yes/no): ").strip().lower())
+remote_work_preference = (
+
+    input("Would you like to filter for remote work jobs? (yes/no): ").strip().lower()
+    # 'no'
+)
 
 # Set up Chrome options
 chrome_options = Options()
@@ -234,7 +239,7 @@ def click_easy_apply_checkbox():
             print("Easy Apply checkbox clicked using XPath.")
             return True
         except Exception as e:
-            print(f"Error clicking checkbox with XPath: {e}")
+            print(f"Error clicking checkbox with XPath: ")
 
         # Try using CSS selector method
         try:
@@ -243,7 +248,7 @@ def click_easy_apply_checkbox():
             print("Easy Apply checkbox clicked using CSS selector.")
             return True
         except Exception as e:
-            print(f"Error clicking checkbox with CSS selector: {e}")
+            print(f"Error clicking checkbox with CSS selector:")
 
         # Try using JavaScript click if other methods fail
         try:
@@ -251,14 +256,14 @@ def click_easy_apply_checkbox():
             print("Easy Apply checkbox clicked using JavaScript.")
             return True
         except Exception as e:
-            print(f"Error clicking checkbox with JavaScript: {e}")
+            print(f"Error clicking checkbox with JavaScript: ")
 
         # Fallback - report failure
         print("Failed to click Easy Apply checkbox after all attempts.")
         return False
 
     except Exception as e:
-        print(f"Error locating Easy Apply checkbox: {e}")
+        print(f"Error locating Easy Apply checkbox: ")
         return False
 
 
@@ -318,7 +323,7 @@ def click_work_from_home_checkbox():
 
 
 # If the user wants to filter for remote work, click the checkbox
-if remote_work_preference in ["yes" , "y"]:
+if remote_work_preference in ["yes", "y"]:
     print("You have chosen to filter for remote work jobs.")
     if click_work_from_home_checkbox():
         print("Work from Home checkbox clicked successfully.")
@@ -335,18 +340,20 @@ def click_easy_apply_buttons_for_jobs():
     second_button_xpath = '//*[@id="__next"]/div[3]/div[2]/div[1]/div/div/div/div[2]/div/button'
     third_button_xpath = '//*[@id="__next"]/div[3]/div[2]/div[1]/div/div/div/span/button'
 
-
+    # XPaths for the unchecked and checked buttons
+    unchecked_button_xpath = "//button[@data-qa='applyJobBtn' and text()='Easy apply']"
+    checked_button_xpath = "//button[@data-qa='applyJobBtn' and @disabled]"
 
     try:
         # Define a function to apply to jobs and return a list of applied jobs
         def apply_to_jobs():
             applied_this_round = []  # Track applied jobs in this round
-            retry_limit = 3  # Set the retry limit for the first button
+
             retry_count = 0  # Initialize retry counter
 
             # Locate all Easy Apply buttons on the page
-            apply_buttons = driver.find_elements(By.XPATH, "//button[contains(@data-qa, 'applyJobBtn')]")
-            print(f"Found {len(apply_buttons)} Easy Apply buttons.")
+            apply_buttons = driver.find_elements(By.XPATH, unchecked_button_xpath)
+            print(f"Found {len(apply_buttons)} Easy Apply buttons that are unchecked.")
 
             # Iterate through the apply_buttons in cycles of first, second, and third button clicks
             num_buttons = len(apply_buttons)
@@ -358,8 +365,8 @@ def click_easy_apply_buttons_for_jobs():
                     # Retry clicking the first button until it works or retry limit is reached
                     while retry_count < retry_limit:
                         try:
-                            driver.execute_script("arguments[0].scrollIntoView({block: 'center', inline: 'center'});", first_button)
-                            # time.sleep(1)
+                            driver.execute_script("arguments[0].scrollIntoView({block: 'center', inline: 'center'});",
+                                                  first_button)
                             first_button.click()
                             print(f"Clicked first Easy Apply button for Job {idx + 1}.")
                             break  # Exit the retry loop if successful
@@ -368,7 +375,6 @@ def click_easy_apply_buttons_for_jobs():
                             driver.execute_script("arguments[0].scrollIntoView({block: 'center', inline: 'center'});",
                                                   first_button)
                             print(f"Retry {retry_count}/{retry_limit} failed: . Trying again...")
-                            # time.sleep(2)  # Wait a bit before retrying
 
                     # If after retries, it still didn't work, print a message and move to next job
                     if retry_count >= retry_limit:
@@ -377,25 +383,33 @@ def click_easy_apply_buttons_for_jobs():
                         continue  # Skip this job and move to the next one
 
                     # Wait for the second button to appear and click it
-                    time.sleep(1)
+                    time.sleep(4)
                     second_button = driver.find_element(By.XPATH, second_button_xpath)
                     second_button.click()
                     print(f"Clicked the second Easy Apply button for Job {idx + 1}.")
 
-                    # Wait for the third button to appear and click it
-                    time.sleep(5)
-                    third_button = driver.find_element(By.XPATH, third_button_xpath)
-                    third_button.click()
-                    print(f"Clicked the third Easy Apply button for Job {idx + 1}.")
-
-                    # Add job index to applied_jobs list if successful
+                    # Track this as a successful application after clicking the second button
                     applied_this_round.append(idx + 1)
 
-                    # time.sleep(1)  # Brief pause before the next iteration
+                    # Wait for the third button to appear and click it
+                    time.sleep(10)
+
+                    try:
+                        third_button = driver.find_element(By.XPATH, third_button_xpath)
+                        third_button.click()
+                        time.sleep(1)
+                        third_button.click()  # Double click for confirmation
+                        print(f"Clicked the third Easy Apply button for Job {idx + 1}.")
+                    except Exception as e:
+                        print("Continuing...")
+
+                    # Add job index to applied_jobs list
+                    applied_jobs.append(idx + 1)
 
                 except Exception as e:
-                    print(f"Failed to process Easy Apply buttons for Job {idx + 1}. Error: {e}")
+                    print(f"Failed to process Easy Apply buttons for Job {idx + 1}. Error: ")
                     continue  # Continue with the next set of buttons if one fails
+
             print(applied_this_round)
             return applied_this_round
 
@@ -406,66 +420,83 @@ def click_easy_apply_buttons_for_jobs():
             # Apply to jobs x times on the current page
             for _ in range(number_of_cycles_per_page):
                 applied_jobs += apply_to_jobs()
-                print('')
                 print(f"Applied for {len(applied_jobs)} jobs on Page {page_number}.")
                 print('')
 
                 # Scroll to the top of the page after applying
                 driver.execute_script("window.scrollTo(0, 0);")
-                # time.sleep(10)  # Optional: Wait for any jobs to load after scrolling to top
 
             # If it's not the last page, try to navigate to the next page using aria-label
             if page_number < number_of_pages_to_search:
                 next_page_clicked = False
                 retry_count = 0  # Initialize retry counter
-                max_retries = 10  # Maximum number of retries
+                max_retries = 100  # Maximum number of retries
 
-                # Dynamically generate the aria-label for the next page
                 next_page_selector = f'a[aria-label="Goto Page {page_number + 1}"]'
 
                 while retry_count < max_retries and not next_page_clicked:
                     try:
-                        # Wait for the "Next" page button to be clickable using aria-label
-                        # time.sleep(10)
-                        next_page_button = WebDriverWait(driver, 10).until(
+                        next_page_button = WebDriverWait(driver, 2).until(
                             EC.element_to_be_clickable((By.CSS_SELECTOR, next_page_selector))
                         )
-
-                        # Scroll the element into view to ensure it's visible
                         actions = ActionChains(driver)
                         actions.move_to_element(next_page_button).perform()
-                        time.sleep(5)
+                        time.sleep(2)
 
-                        # Click the "Next" button
                         next_page_button.click()
                         print(f"Navigated to Page {page_number + 1}.")
-                        next_page_clicked = True  # Mark as successful
-
+                        next_page_clicked = True
                     except Exception as e:
-                        retry_count += 1  # Increment retry count
+                        retry_count += 1
                         print(f"Attempt {retry_count} failed: {e}. Retrying...")
 
-                        # Wait before retrying to avoid hammering the server
                         time.sleep(1)
+
                         if retry_count >= max_retries:
-                            print(
-                                f"Failed to navigate to Page {page_number + 1} after {max_retries} attempts. Skipping to next page.")
+                            print(f"Failed to navigate to Page {page_number + 1} after {max_retries} attempts.")
+
+                            try:
+                                exit_button = driver.find_element_by_xpath(
+                                    '//*[@id="__next"]/div[3]/div[2]/div[1]/div/div/header/button')
+                                exit_button.click()
+                                print("Clicked the 'Exit' button using XPath.")
+                            except Exception as xpath_error:
+                                print(f"Failed to click 'Exit' button using XPath: {xpath_error}")
+                                exit_button = driver.find_element_by_xpath(
+                                    '//*[@id="__next"]/div[3]/div[2]/div[1]/div/div/header/button')
+                                exit_button.click()
+
+                                try:
+                                    driver.execute_script(
+                                        "document.querySelector('#__next > div.layout_content__49Kn9.layout_content_searchPage__nLFQv > div:nth-child(3) > div.modal.overflow-auto.fade.apply-job-modal_modal__Y8QOR.show.d-block > div > div > header > button').click()"
+                                    )
+                                    print("Clicked the 'Exit' button using JavaScript.")
+                                    exit_button = driver.find_element_by_xpath(
+                                        '//*[@id="__next"]/div[3]/div[2]/div[1]/div/div/header/button')
+                                    exit_button.click()
+                                except Exception as js_error:
+                                    print(f"Failed to click 'Exit' button using JavaScript: {js_error}")
+                                    exit_button = driver.find_element_by_xpath(
+                                        '//*[@id="__next"]/div[3]/div[2]/div[1]/div/div/header/button')
+                                    exit_button.click()
+
+                            print(f"Skipping to next page after failing to exit loop on Page {page_number}.")
                             break
 
-                # If navigation failed after retries, break the loop
-                if not next_page_clicked:
-                    print(f"Failed to navigate to the next page after Page {page_number}. Exiting.")
-                    break
+                    if not next_page_clicked:
+                        print(f"Failed to navigate to the next page after Page {page_number}. Exiting.")
+                        break
 
-                time.sleep(15)  # Wait for the next page to load
+                    time.sleep(3)
 
         print(f"Total applied jobs: {len(applied_jobs)}")
         print(applied_jobs)
-        return applied_jobs  # Return list of all applied jobs
+        return applied_jobs
 
     except Exception as e:
         print(f"Error finding Easy Apply buttons: {e}")
         return []  # Return empty list if error occurs
+
 
 
 # Call the function to click the Easy Apply buttons and track applied jobs
