@@ -45,7 +45,7 @@ location = os.getenv("location")
 
 number_of_pages_to_search = 1000
 number_of_cycles_per_page = 1
-retry_limit = 5  # Set the retry limit for the first button
+retry_limit = 50  # Set the retry limit for the first button
 
 # Prompt the user for the remote work option
 remote_work_preference = (
@@ -220,7 +220,7 @@ if click_search_button():
 else:
     print("Failed to click the search button.")
 
-time.sleep(10)
+time.sleep(5)
 
 
 # Function to click the Easy Apply checkbox
@@ -368,48 +368,50 @@ def click_easy_apply_buttons_for_jobs():
                             driver.execute_script("arguments[0].scrollIntoView({block: 'center', inline: 'center'});",
                                                   first_button)
                             first_button.click()
-                            print(f"Clicked first Easy Apply button for Job {idx + 1}.")
+                            # print(f"Clicked first Easy Apply button for Job {idx + 1}.")
                             break  # Exit the retry loop if successful
                         except Exception as e:
                             retry_count += 1
                             driver.execute_script("arguments[0].scrollIntoView({block: 'center', inline: 'center'});",
                                                   first_button)
-                            print(f"Retry {retry_count}/{retry_limit} failed: . Trying again...")
+                            # print(f"Retry {retry_count}/{retry_limit} failed: . Trying again...")
 
                     # If after retries, it still didn't work, print a message and move to next job
                     if retry_count >= retry_limit:
-                        print(f"Failed to click Easy Apply button for Job {idx + 1} after {retry_limit} retries.")
+                        # print(f"Failed to click Easy Apply button for Job {idx + 1} after {retry_limit} retries.")
                         retry_count = 0
                         continue  # Skip this job and move to the next one
 
                     # Wait for the second button to appear and click it
-                    time.sleep(4)
+                    time.sleep(2)
                     second_button = driver.find_element(By.XPATH, second_button_xpath)
                     second_button.click()
-                    print(f"Clicked the second Easy Apply button for Job {idx + 1}.")
+                    # print(f"Clicked the second Easy Apply button for Job {idx + 1}.")
 
                     # Track this as a successful application after clicking the second button
                     applied_this_round.append(idx + 1)
 
                     # Wait for the third button to appear and click it
-                    time.sleep(10)
+                    time.sleep(2)
 
                     try:
                         third_button = driver.find_element(By.XPATH, third_button_xpath)
                         third_button.click()
                         time.sleep(1)
                         third_button.click()  # Double click for confirmation
-                        print(f"Clicked the third Easy Apply button for Job {idx + 1}.")
+                        # print(f"Clicked the third Easy Apply button for Job {idx + 1}.")
                     except Exception as e:
-                        print("Continuing...")
+                        third_button = driver.find_element(By.XPATH, third_button_xpath)
+                        third_button.click()
+                        # print("Continuing...")
 
                     # Add job index to applied_jobs list
                     applied_jobs.append(idx + 1)
 
                 except Exception as e:
-                    print(f"Failed to process Easy Apply buttons for Job {idx + 1}. Error: ")
+                    # print(f"Failed to process Easy Apply buttons for Job {idx + 1}. Error: ")
                     continue  # Continue with the next set of buttons if one fails
-
+            time.sleep(3)
             print(applied_this_round)
             return applied_this_round
 
@@ -441,13 +443,21 @@ def click_easy_apply_buttons_for_jobs():
                         )
                         actions = ActionChains(driver)
                         actions.move_to_element(next_page_button).perform()
-                        time.sleep(2)
+                        time.sleep(1)
 
                         next_page_button.click()
                         print(f"Navigated to Page {page_number + 1}.")
                         next_page_clicked = True
                     except Exception as e:
                         retry_count += 1
+                        next_page_button = WebDriverWait(driver, 2).until(
+                            EC.element_to_be_clickable((By.CSS_SELECTOR, next_page_selector))
+                        )
+                        actions = ActionChains(driver)
+                        actions.move_to_element(next_page_button).perform()
+                        time.sleep(1)
+
+                        next_page_button.click()
                         print(f"Attempt {retry_count} failed: {e}. Retrying...")
 
                         time.sleep(1)
@@ -508,4 +518,4 @@ if applied_jobs:
 else:
     print("No jobs were successfully applied for.")
 
-time.sleep(10)
+time.sleep(3)
